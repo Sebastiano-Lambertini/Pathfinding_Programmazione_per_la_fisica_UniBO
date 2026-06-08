@@ -4,7 +4,7 @@
 #include <set>
 #include <algorithm>
 #include <cmath>
-
+//pollo
 const int DX[4] = {0, 1, 0, -1};
 const int DY[4] = {-1, 0, 1, 0};
 //Funzioni della classe
