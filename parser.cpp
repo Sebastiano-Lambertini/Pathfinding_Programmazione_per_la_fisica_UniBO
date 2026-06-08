@@ -229,9 +229,13 @@ std::vector<Point> estrai_coordinate(const std::string &linea,
   for (size_t i = 0; i < punti_flag.size(); ++i) {
     if (punti_flag[i].flag == 1) {
       indici_nodi.push_back(i);
+      i += 2; // salta i due punti di "controllo"
+      continue;
+    } else {
+      indici_nodi.push_back(i);
     }
   }
-
+  std::cout << "num di flag 1" << indici_nodi.size() << "\n";
   // se 0, normale
   if (indici_nodi.empty()) {
     for (const auto &pf : punti_flag) {
@@ -270,7 +274,7 @@ std::vector<Point> estrai_coordinate(const std::string &linea,
         punti.push_back({static_cast<int>(pt.x), static_cast<int>(pt.y)});
       }
     } else if (num_nodi_di_curva == 1) {
-      // Curva quadraticas 
+      // Curva quadraticas
       const auto &c = punti_flag[inizio_idx + 1];
       const int passi = 10;
       for (int s = 1; s <= passi; ++s) {
