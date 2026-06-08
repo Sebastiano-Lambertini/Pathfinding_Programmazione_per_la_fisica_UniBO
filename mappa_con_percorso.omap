@@ -572,7 +572,28 @@ The purple line will extend a bit into the finish symbol. This is a shortcoming 
 <object type="1" symbol="50"><coords count="5">18896 45983;20860 50940;30467 48616;25495 42215;18896 45983 18;</coords><pattern rotation="0"><coord x="0" y="0"/></pattern></object>
 <object type="1" symbol="50"><coords count="5">58587 -91639;59373 -86821;72155 -87116;71172 -92229;58587 -91639 18;</coords><pattern rotation="0"><coord x="0" y="0"/></pattern></object>
 <object type="1" symbol="50"><coords count="13">-28697 -38507 1;-34115 -32702;-33801 -23604;-27996 -18185 1;-22191 -12767;-13092 -13081;-7674 -18886 1;-2256 -24691;-2570 -33790;-8375 -39208 1;-14180 -44626;-23279 -44312;-28697 -38507 18;</coords><pattern rotation="0"><coord x="0" y="0"/></pattern></object>
-</objects></part>
+Qui iniziano i percorsi
+      <object type="1" symbol="163">        <coords count="7">-9055 54200;-33598 35237;-59586 -74206;-59405 -74387;-31072 -76915;-22229 -79263;14766 -105450 16;</coords><pattern rotation="0"><coord x="0" y="0"/></pattern></object>
+costo del percorso precedente:1255.52m
+      <object type="1" symbol="163">        <coords count="5">-9055 54200;-33598 35237;-59586 -74206;-39012 -93169;14766 -105450 16;</coords><pattern rotation="0"><coord x="0" y="0"/></pattern></object>
+costo del percorso precedente:1255.34m
+      <object type="1" symbol="163">        <coords count="10">-9055 54200;-19702 30180;-24755 22956;-35583 7966;-59586 -73845;-59586 -74206;-59405 -74387;-31072 -76915;-22229 -79263;14766 -105450 16;</coords><pattern rotation="0"><coord x="0" y="0"/></pattern></object>
+costo del percorso precedente:1231.69m
+      <object type="1" symbol="163">        <coords count="8">-9055 54200;-19702 30180;-24755 22956;-35583 7966;-59586 -73845;-59586 -74206;-39012 -93169;14766 -105450 16;</coords><pattern rotation="0"><coord x="0" y="0"/></pattern></object>
+costo del percorso precedente:1231.51m
+      <object type="1" symbol="163">        <coords count="13">-9055 54200;20902 51130;30467 48782;51943 33251;58440 10495;64576 -69330;65117 -77999;64937 -78179;12059 -85584;11698 -85945;8811 -95337;8811 -96240;14766 -105450 16;</coords><pattern rotation="0"><coord x="0" y="0"/></pattern></object>
+costo del percorso precedente:1410.95m
+      <object type="1" symbol="163">        <coords count="12">-9055 54200;20902 51130;30467 48782;51943 33251;58440 10495;72336 -86848;72336 -87571;71614 -92086;71433 -92266;61688 -98407;49236 -104908;14766 -105450 16;</coords><pattern rotation="0"><coord x="0" y="0"/></pattern></object>
+costo del percorso precedente:1407.17m
+      <object type="1" symbol="163">        <coords count="14">-9055 54200;25053 41558;32633 42281;49597 34515;51943 33251;58440 10495;64576 -69330;65117 -77999;64937 -78179;12059 -85584;11698 -85945;8811 -95337;8811 -96240;14766 -105450 16;</coords><pattern rotation="0"><coord x="0" y="0"/></pattern></object>
+costo del percorso precedente:1404.56m
+      <object type="1" symbol="163">        <coords count="13">-9055 54200;25053 41558;32633 42281;49597 34515;51943 33251;58440 10495;72336 -86848;72336 -87571;71614 -92086;71433 -92266;61688 -98407;49236 -104908;14766 -105450 16;</coords><pattern rotation="0"><coord x="0" y="0"/></pattern></object>
+costo del percorso precedente:1400.78m
+      <object type="1" symbol="163">        <coords count="11">-9055 54200;29204 25304;58440 10495;64576 -69330;65117 -77999;64937 -78179;12059 -85584;11698 -85945;8811 -95337;8811 -96240;14766 -105450 16;</coords><pattern rotation="0"><coord x="0" y="0"/></pattern></object>
+costo del percorso precedente:1358.82m
+      <object type="1" symbol="163">        <coords count="10">-9055 54200;29204 25304;58440 10495;72336 -86848;72336 -87571;71614 -92086;71433 -92266;61688 -98407;49236 -104908;14766 -105450 16;</coords><pattern rotation="0"><coord x="0" y="0"/></pattern></object>
+costo del percorso precedente:1355.04m
+Qui finiscono i percorsi</objects></part>
 </parts>
 <templates count="0" first_front_template="0">
 <defaults use_meters_per_pixel="true" meters_per_pixel="0" dpi="0" scale="0"/>
