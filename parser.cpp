@@ -235,7 +235,6 @@ std::vector<Point> estrai_coordinate(const std::string &linea,
       indici_nodi.push_back(i);
     }
   }
-  std::cout << "num di flag 1" << indici_nodi.size() << "\n";
   // se 0, normale
   if (indici_nodi.empty()) {
     for (const auto &pf : punti_flag) {
