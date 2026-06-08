@@ -269,6 +269,19 @@ std::vector<Point> estrai_coordinate(const std::string &linea,
                                 nodo_fine, t);
         punti.push_back({static_cast<int>(pt.x), static_cast<int>(pt.y)});
       }
+    } else if (num_nodi_di_curva == 1) {
+      // Curva quadraticas 
+      const auto &c = punti_flag[inizio_idx + 1];
+      const int passi = 10;
+      for (int s = 1; s <= passi; ++s) {
+        double t = static_cast<double>(s) / passi;
+        double u = 1.0 - t;
+        double x =
+            u * u * nodo_inizio.x + 2 * u * t * c.x + t * t * nodo_fine.x;
+        double y =
+            u * u * nodo_inizio.y + 2 * u * t * c.y + t * t * nodo_fine.y;
+        punti.push_back({static_cast<int>(x), static_cast<int>(y)});
+      }
     } else {
       // se problemi fa linea retta
       for (size_t i = inizio_idx + 1; i <= fine_idx; ++i) {
