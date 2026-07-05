@@ -1,0 +1,62 @@
+Start testing: Jun 25 17:03 CEST
+----------------------------------------------------------
+1/1 Testing: progetto.t
+1/1 Test: progetto.t
+Command: "/home/lambe/PPF/caso/route/repo/repo_route/build/Debug/progetto.t"
+Directory: /home/lambe/PPF/caso/route/repo/repo_route/build
+"progetto.t" start time: Jun 25 17:03 CEST
+Output:
+----------------------------------------------------------
+[doctest] doctest version is "2.4.12"
+[doctest] run with "--help" for options
+Inserire scala della mappa (se è 1:4000, scrivere 4000)
+Il verde 3 è oltrepassabile? (y/n)
+Trovati 2 percorsi entro +20% del migliore:
+
+Percorsi di lunghezza:
+831.748m
+879.865m
+File OMAP con percorso salvato: mappa_con_percorso.omap
+Inserire scala della mappa (se è 1:4000, scrivere 4000)
+Il verde 3 è oltrepassabile? (y/n)
+Trovati 3 percorsi entro +20% del migliore:
+
+Percorsi di lunghezza:
+1186.12m
+1084.61m
+1019.28m
+File OMAP con percorso salvato: mappa_con_percorso.omap
+Inserire scala della mappa (se è 1:4000, scrivere 4000)
+Il verde 3 è oltrepassabile? (y/n)
+Trovati 2 percorsi entro +20% del migliore:
+
+Percorsi di lunghezza:
+888.916m
+965.587m
+File OMAP con percorso salvato: mappa_con_percorso.omap
+Inserire scala della mappa (se è 1:4000, scrivere 4000)
+Il verde 3 è oltrepassabile? (y/n)
+Trovati 7 percorsi entro +20% del migliore:
+
+Percorsi di lunghezza:
+1080.79m
+1035.62m
+1085.6m
+964.211m
+924.673m
+963.555m
+979.302m
+File OMAP con percorso salvato: mappa_con_percorso.omap
+===============================================================================
+[doctest] test cases: 20 | 20 passed | 0 failed | 0 skipped
+[doctest] assertions: 53 | 53 passed | 0 failed |
+[doctest] Status: SUCCESS!
+<end of output>
+Test time = 113.07 sec
+----------------------------------------------------------
+Test Passed.
+"progetto.t" end time: Jun 25 17:05 CEST
+"progetto.t" time elapsed: 00:01:53
+----------------------------------------------------------
+
+End testing: Jun 25 17:05 CEST

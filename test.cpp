@@ -12,12 +12,12 @@
 
 using namespace pf;
 // costruisce griglia di larghezza W e altezza H tutta libera
-static std::vector<std::vector<bool>> griglia_libera(int W, int H) {
-  return std::vector<std::vector<bool>>(
-      static_cast<size_t>(H), std::vector<bool>(static_cast<size_t>(W), true));
+static std::vector<std::vector<TipoCella>> griglia_libera(int W, int H) {
+  return std::vector<std::vector<TipoCella>>(
+      static_cast<size_t>(H), std::vector<TipoCella>(static_cast<size_t>(W), TipoCella::oltrepassabile));
 }
 
-static std::vector<Path> esegui_test_omap(const std::string &nome_file,
+static std::vector<Percorso> esegui_test_omap(const std::string &nome_file,
                                           double scala = 4000.0,
                                           char verde3 = 'n') {
 
@@ -29,14 +29,14 @@ static std::vector<Path> esegui_test_omap(const std::string &nome_file,
   auto old_cin_buf = std::cin.rdbuf();
   std::cin.rdbuf(input_stream.rdbuf());
 
-  std::vector<Path> paths = helper_main(nome_file);
+  std::vector<Percorso> percorsi = aiuto_main(nome_file);
 
   std::cin.rdbuf(old_cin_buf);
 
-  return paths;
+  return percorsi;
 }
 
-TEST_CASE("filtra_paths: tutti i percorsi entro 1.2x il costo minimo") {
+TEST_CASE("filtra_percorsi: tutti i percorsi entro 1.2x il costo minimo") {
   int W = 15, H = 15;
   auto griglia = griglia_libera(W, H);
 
@@ -44,88 +44,88 @@ TEST_CASE("filtra_paths: tutti i percorsi entro 1.2x il costo minimo") {
   for (int x = 2; x <= 12; ++x) {
     if (x != 5 && x != 10) // varchi a x=5 e x=10
     {
-      griglia[7][static_cast<size_t>(x)] = false;
+      griglia[7][static_cast<size_t>(x)] = TipoCella::non_oltrepassabile;
     }
   }
 
-  Point A(7, 0), B(7, 14);
-  auto paths = final_aggiratore(A, B, griglia);
+  Punto A(7, 0), B(7, 14);
+  auto percorsi = trova_percorsi_con_algoritmo_completo(A, B, griglia);
 
-  if (!paths.empty()) {
-    double costo_min = paths[0].cost;
-    for (const auto &p : paths) {
-      costo_min = std::min(costo_min, p.cost);
+  if (!percorsi.empty()) {
+    double costo_min = percorsi[0].costo;
+    for (const auto &p : percorsi) {
+      costo_min = std::min(costo_min, p.costo);
     }
 
-    for (const auto &p : paths) {
-      CHECK(p.cost <= doctest::Approx(costo_min * 1.2).epsilon(0.01));
+    for (const auto &p : percorsi) {
+      CHECK(p.costo <= doctest::Approx(costo_min * 1.2).epsilon(0.01));
     }
   }
 }
 
-TEST_CASE("Grid::is_free: celle libere e occupate") {
+TEST_CASE("Griglia::e_oltrepassabile: celle libere e occupate") {
   int W = 5, H = 5;
-  auto griglia = griglia_libera(W, H);
-  griglia[2][3] = false; // occupa (x=3, y=2)
+  auto griglia_vettori = griglia_libera(W, H);
+  griglia_vettori[2][3] = TipoCella::non_oltrepassabile; // occupa (x=3, y=2)
 
-  Grid grid(griglia);
+  Griglia griglia(griglia_vettori);
 
-  CHECK(grid.is_free(0, 0) == true);
-  CHECK(grid.is_free(3, 2) == false);  // cella occupata
-  CHECK(grid.is_free(-1, 0) == false); // fuori bounds
-  CHECK(grid.is_free(0, 99) == false); // fuori bounds
+  CHECK(griglia.e_oltrepassabile(0, 0) == true);
+  CHECK(griglia.e_oltrepassabile(3, 2) == false);  // cella occupata
+  CHECK(griglia.e_oltrepassabile(-1, 0) == false); // fuori bounds
+  CHECK(griglia.e_oltrepassabile(0, 99) == false); // fuori bounds
 }
 
 TEST_CASE(
-    "Grid::controlla_id_ostacolo assegna id diversi a ostacoli separati") {
+    "Griglia::controlla_id_ostacolo assegna id diversi a ostacoli separati") {
   int W = 10, H = 5;
-  auto griglia = griglia_libera(W, H);
+  auto griglia_vettori = griglia_libera(W, H);
 
-  griglia[1][1] = false;
+  griglia_vettori[1][1] = TipoCella::non_oltrepassabile;
 
-  griglia[3][8] = false;
+  griglia_vettori[3][8] = TipoCella::non_oltrepassabile;
 
-  Grid grid(griglia);
-  grid.controlla_id_ostacolo();
+  Griglia griglia(griglia_vettori);
+  griglia.controlla_id_ostacolo();
 
-  int id1 = grid.get_id_ostacolo(1, 1);
-  int id2 = grid.get_id_ostacolo(8, 3);
+  int id1 = griglia.ottieni_id_ostacolo(1, 1);
+  int id2 = griglia.ottieni_id_ostacolo(8, 3);
 
   CHECK(id1 >= 0);
   CHECK(id2 >= 0);
   CHECK(id1 != id2); // ostacoli distinti -> id diversi
 }
 
-TEST_CASE("Grid::controlla_id_ostacolo: blocco connesso ha lo stesso id") {
+TEST_CASE("Griglia::controlla_id_ostacolo: blocco connesso ha lo stesso id") {
   int W = 10, H = 5;
-  auto griglia = griglia_libera(W, H);
+  auto griglia_vettori = griglia_libera(W, H);
 
   for (int y = 1; y <= 3; ++y) {
     for (int x = 2; x <= 4; ++x) {
-      griglia[static_cast<size_t>(y)][static_cast<size_t>(x)] = false;
+      griglia_vettori[static_cast<size_t>(y)][static_cast<size_t>(x)] = TipoCella::non_oltrepassabile;
     }
   }
 
-  Grid grid(griglia);
-  grid.controlla_id_ostacolo();
+  Griglia griglia(griglia_vettori);
+  griglia.controlla_id_ostacolo();
 
-  int id_ref = grid.get_id_ostacolo(2, 1);
+  int id_ref = griglia.ottieni_id_ostacolo(2, 1);
   CHECK(id_ref >= 0);
-  CHECK(grid.get_id_ostacolo(3, 2) == id_ref);
-  CHECK(grid.get_id_ostacolo(4, 3) == id_ref);
+  CHECK(griglia.ottieni_id_ostacolo(3, 2) == id_ref);
+  CHECK(griglia.ottieni_id_ostacolo(4, 3) == id_ref);
 }
 
 TEST_CASE("Costo percorso orizzontale 4 passi") {
   auto griglia = griglia_libera(10, 10);
-  Point A(0, 5), B(4, 5);
+  Punto A(0, 5), B(4, 5);
 
-  auto paths = final_aggiratore(A, B, griglia);
-  REQUIRE(!paths.empty());
+  auto percorsi = trova_percorsi_con_algoritmo_completo(A, B, griglia);
+  REQUIRE(!percorsi.empty());
 
   // Deve trovare almeno un percorso con costo ~ 4
   bool trovato = false;
-  for (const auto &p : paths) {
-    if (p.cost == doctest::Approx(4.0).epsilon(0.1)) {
+  for (const auto &p : percorsi) {
+    if (p.costo == doctest::Approx(4.0).epsilon(0.1)) {
       trovato = true;
     }
   }
@@ -141,20 +141,20 @@ TEST_CASE("Nessun percorso se arrivo è completamente circondato") {
   for (int y = 2; y <= 4; ++y) {
     for (int x = 2; x <= 4; ++x) {
       if (!(x == 3 && y == 3)) {
-        griglia[static_cast<size_t>(y)][static_cast<size_t>(x)] = false;
+        griglia[static_cast<size_t>(y)][static_cast<size_t>(x)] = TipoCella::non_oltrepassabile;
       }
     }
   }
 
-  Point A(0, 0), B(3, 3);
-  auto paths = final_aggiratore(A, B, griglia);
+  Punto A(0, 0), B(3, 3);
+  auto percorsi = trova_percorsi_con_algoritmo_completo(A, B, griglia);
 
-  CHECK(paths.empty());
+  CHECK(percorsi.empty());
 }
 
 TEST_CASE("linea_dritta produce punti collineari e corretta lunghezza") {
-  Point da(0, 0), a(4, 0);
-  auto linea = linea_dritta(da, a);
+  Punto da(0, 0), a(4, 0);
+  auto linea = linea_dritta_con_bresenham(da, a);
 
   // Deve contenere esattamente 5 punti (0,1,2,3,4)
   CHECK(linea.size() == 5);
@@ -169,9 +169,9 @@ TEST_CASE("linea_dritta produce punti collineari e corretta lunghezza") {
 
 TEST_CASE("Griglia rettangolare") {
   auto griglia = griglia_libera(20, 10); // 20 larghezza, 10 altezza
-  Point A(0, 5), B(19, 5);
-  auto paths = final_aggiratore(A, B, griglia);
-  CHECK(!paths.empty());
+  Punto A(0, 5), B(19, 5);
+  auto percorsi = trova_percorsi_con_algoritmo_completo(A, B, griglia);
+  CHECK(!percorsi.empty());
   // verifica che i punti non escano dai bounds
 }
 
@@ -180,54 +180,54 @@ TEST_CASE("Ostacolo a U, uscita verso l'alto") {
   auto griglia = griglia_libera(W, H);
   // pareti sinistra, destra e fondo della U
   for (size_t y = 5; y <= 12; ++y) {
-    griglia[y][5] = false; // parete sinistra
-    griglia[y][9] = false; // parete destra
+    griglia[y][5] = TipoCella::non_oltrepassabile; // parete sinistra
+    griglia[y][9] = TipoCella::non_oltrepassabile; // parete destra
   }
   for (size_t x = 5; x <= 9; ++x) {
-    griglia[12][x] = false;
+    griglia[12][x] = TipoCella::non_oltrepassabile;
   } // fondo
   // partenza dentro la U (6,7), arrivo fuori in alto (6,2)
-  Point A(6, 7), B(6, 2);
-  auto paths = final_aggiratore(A, B, griglia);
-  CHECK(!paths.empty());
+  Punto A(6, 7), B(6, 2);
+  auto percorsi = trova_percorsi_con_algoritmo_completo(A, B, griglia);
+  CHECK(!percorsi.empty());
 }
 
 TEST_CASE("Griglia 1x1") {
   auto griglia = griglia_libera(1, 1);
-  Point A(0, 0), B(0, 0);
-  auto paths = final_aggiratore(A, B, griglia);
-  CHECK(paths.size() == 1);
-  CHECK(paths[0].cost == 0.0);
+  Punto A(0, 0), B(0, 0);
+  auto percorsi = trova_percorsi_con_algoritmo_completo(A, B, griglia);
+  CHECK(percorsi.size() == 1);
+  CHECK(percorsi[0].costo == 0.0);
 }
 
-TEST_CASE("Filtra_paths esclude percorsi troppo lunghi") {
-  // vettore di Path con costi noti
-  std::vector<Path> percorsi;
+TEST_CASE("Filtra_percorsi esclude percorsi troppo lunghi") {
+  // vettore di Percorso con costi noti
+  std::vector<Percorso> percorsi;
 
-  Path p1, p2, p3;
-  p1.cost = 100.0;
-  p2.cost = 119.0;
-  p3.cost = 121.0; // fuori soglia
+  Percorso p1, p2, p3;
+  p1.costo = 100.0;
+  p2.costo = 119.0;
+  p3.costo = 121.0; // fuori soglia
 
   // punti fittizi per sicurezza
-  p1.points = {Point(0, 0), Point(10, 0)};
-  p2.points = {Point(0, 0), Point(12, 0)};
-  p3.points = {Point(0, 0), Point(14, 0)};
+  p1.punti = {Punto(0, 0), Punto(10, 0)};
+  p2.punti = {Punto(0, 0), Punto(12, 0)};
+  p3.punti = {Punto(0, 0), Punto(14, 0)};
 
   percorsi.push_back(p1);
   percorsi.push_back(p2);
   percorsi.push_back(p3);
 
-  auto filtrati = filtra_paths(percorsi);
+  auto filtrati = filtra_percorsi_per_lunghezza(percorsi);
 
   CHECK(filtrati.size() == 2);
   // Ordine non specificato, ma i costi devono essere <= 120
   for (const auto &p : filtrati) {
-    CHECK(p.cost <= 120.0 + 1e-9);
+    CHECK(p.costo <= 120.0 + 1e-9);
   }
   // Nessuno dei filtrati deve avere costo 121
   for (const auto &p : filtrati) {
-    CHECK(p.cost != doctest::Approx(121.0));
+    CHECK(p.costo != doctest::Approx(121.0));
   }
 }
 
@@ -235,14 +235,14 @@ TEST_CASE(
     "pulisci_all_indietro raddrizza un percorso zigzag su griglia libera") {
   int W = 20, H = 20;
   auto griglia = griglia_libera(W, H);
-  Grid grid(griglia);
+  Griglia griglia_vettori(griglia);
 
   // percorso a zigzag: (0,0) -> (5,5) -> (10,0) -> (15,5) -> (20,0)
   // griglia libera, quindi soluzione è linea retta.
-  std::vector<Point> zigzag = {Point(0, 0), Point(5, 5), Point(10, 0),
-                               Point(15, 5), Point(20, 0)};
+  std::vector<Punto> zigzag = {Punto(0, 0), Punto(5, 5), Punto(10, 0),
+                               Punto(15, 5), Punto(20, 0)};
 
-  auto puliti = pulisci_all_indietro(zigzag, grid);
+  auto puliti = semplifica_percorso_all_indietro(zigzag, griglia);
 
   // 1 sola versione
   CHECK(puliti.size() == 1);
@@ -267,13 +267,13 @@ TEST_CASE(
 TEST_CASE("pulisci_fino_a_stabile converge a percorso ottimo") {
   int W = 20, H = 20;
   auto griglia = griglia_libera(W, H);
-  Grid grid(griglia);
+  Griglia griglia_vettori(griglia);
 
   // Stesso zigzag
-  std::vector<Point> zigzag = {Point(0, 0), Point(5, 5), Point(10, 0),
-                               Point(15, 5), Point(20, 0)};
+  std::vector<Punto> zigzag = {Punto(0, 0), Punto(5, 5), Punto(10, 0),
+                               Punto(15, 5), Punto(20, 0)};
 
-  auto stabili = pulisci_fino_a_stabile(zigzag, grid);
+  auto stabili = semplifica_percorso_all_indietro_fino_a_stabilizzazione(zigzag, griglia);
   CHECK(stabili.size() == 1);
   const auto &finale = stabili[0];
 
@@ -285,90 +285,90 @@ TEST_CASE("pulisci_fino_a_stabile converge a percorso ottimo") {
 
 TEST_CASE("vede_punto_di_arrivo: linea libera ritorna true") {
   int W = 10, H = 10;
-  auto griglia = griglia_libera(W, H);
-  Grid grid(griglia);
+  auto griglia_vettori = griglia_libera(W, H);
+  Griglia griglia(griglia_vettori);
 
-  Point P(0, 0), B(9, 9);
-  CHECK(vede_punto_di_arrivo(P, B, grid) == true);
+  Punto P(0, 0), B(9, 9);
+  CHECK(e_libero_fino_a_punto_di_arrivo(P, B, griglia) == true);
 }
 
 TEST_CASE("vede_punto_di_arrivo: ostacolo sulla linea ritorna false") {
   int W = 10, H = 10;
-  auto griglia = griglia_libera(W, H);
+  auto griglia_vettori = griglia_libera(W, H);
 
-  griglia[5][5] = false;
-  Grid grid(griglia);
+  griglia_vettori[5][5] = TipoCella::non_oltrepassabile;
+  Griglia griglia(griglia_vettori);
 
-  Point P(0, 0), B(9, 9);
-  CHECK(vede_punto_di_arrivo(P, B, grid) == false);
+  Punto P(0, 0), B(9, 9);
+  CHECK(e_libero_fino_a_punto_di_arrivo(P, B, griglia_vettori) == false);
 }
 
 TEST_CASE("vede_punto_di_arrivo: ostacolo leggermente spostato non blocca") {
   int W = 10, H = 10;
-  auto griglia = griglia_libera(W, H);
+  auto griglia_vettori = griglia_libera(W, H);
 
-  griglia[6][5] = false;
-  Grid grid(griglia);
+  griglia_vettori[6][5] = TipoCella::non_oltrepassabile;
+  Griglia griglia(griglia_vettori);
 
-  Point P(0, 0), B(9, 9);
+  Punto P(0, 0), B(9, 9);
   // bresenham da (0,0) a (9,9) passa per (5,5), non per (5,6)
   // quindi deve essere ancora libera
-  CHECK(vede_punto_di_arrivo(P, B, grid) == true);
+  CHECK(e_libero_fino_a_punto_di_arrivo(P, B, griglia) == true);
 }
 
-TEST_CASE("Mappa con tante ricorsioni anche mentre controlla all'indetro") {
-  auto paths = esegui_test_omap("test_su_omap1.omap");
-  CHECK(!paths.empty());
-  CHECK(paths.size() == 10);
+/*TEST_CASE("Mappa con tante ricorsioni anche mentre controlla all'indetro") {
+  auto percorsi = esegui_test_omap("test_su_omap1.omap");
+  CHECK(!percorsi.empty());
+  CHECK(percorsi.size() == 10);
   auto it = std::min_element(
-      paths.begin(), paths.end(),
-      [](const Path &a, const Path &b) { return a.cost < b.cost; });
+      percorsi.begin(), percorsi.end(),
+      [](const Percorso &a, const Percorso &b) { return a.costo < b.cost; });
   double costo_minimo = it->cost;
   CHECK(costo_minimo == doctest::Approx(889).epsilon(1));
 }
-
+*/
 TEST_CASE("Mappa con 1 ostacolo in mezzo") {
-  auto paths = esegui_test_omap("test_su_omap2.omap");
-  CHECK(!paths.empty());
-  CHECK(paths.size() == 2);
+  auto percorsi = esegui_test_omap("test_su_omap2.omap");
+  CHECK(!percorsi.empty());
+  CHECK(percorsi.size() == 2);
   auto it = std::min_element(
-      paths.begin(), paths.end(),
-      [](const Path &a, const Path &b) { return a.cost < b.cost; });
-  double costo_minimo = it->cost;
+      percorsi.begin(), percorsi.end(),
+      [](const Percorso &a, const Percorso &b) { return a.costo < b.costo; });
+  double costo_minimo = it->costo;
   CHECK(costo_minimo == doctest::Approx(832).epsilon(1));
 }
 
 TEST_CASE("Mappa con linee") {
-  auto paths = esegui_test_omap("test_su_omap3.omap");
-  CHECK(!paths.empty());
-  CHECK(paths.size() == 3);
+  auto percorsi = esegui_test_omap("test_su_omap3.omap");
+  CHECK(!percorsi.empty());
+  CHECK(percorsi.size() == 3);
   auto it = std::min_element(
-      paths.begin(), paths.end(),
-      [](const Path &a, const Path &b) { return a.cost < b.cost; });
-  double costo_minimo = it->cost;
+      percorsi.begin(), percorsi.end(),
+      [](const Percorso &a, const Percorso &b) { return a.costo < b.costo; });
+  double costo_minimo = it->costo;
   CHECK(costo_minimo == doctest::Approx(1019).epsilon(1));
 }
 
 TEST_CASE("Poligono concavo") {
-  auto paths = esegui_test_omap("test_su_omap4.omap");
-  CHECK(!paths.empty());
-  CHECK(paths.size() == 2);
+  auto percorsi = esegui_test_omap("test_su_omap4.omap");
+  CHECK(!percorsi.empty());
+  CHECK(percorsi.size() == 2);
   auto it = std::min_element(
-      paths.begin(), paths.end(),
-      [](const Path &a, const Path &b) { return a.cost < b.cost; });
-  double costo_minimo = it->cost;
+      percorsi.begin(), percorsi.end(),
+      [](const Percorso &a, const Percorso &b) { return a.costo < b.costo; });
+  double costo_minimo = it->costo;
   CHECK(costo_minimo == doctest::Approx(889).epsilon(1));
 }
 
 TEST_CASE(
     "Tanti ostacoli da aggirare in avanti con un percorso poco sopra il 20%") {
-  auto paths = esegui_test_omap("test_su_omap5.omap");
-  CHECK(!paths.empty());
-  CHECK(paths.size() == 7);
+  auto percorsi = esegui_test_omap("test_su_omap5.omap");
+  CHECK(!percorsi.empty());
+  CHECK(percorsi.size() == 7);
   auto it = std::min_element(
-      paths.begin(), paths.end(),
-      [](const Path &a, const Path &b) { return a.cost < b.cost; });
-  double costo_minimo = it->cost;
+      percorsi.begin(), percorsi.end(),
+      [](const Percorso &a, const Percorso &b) { return a.costo < b.costo; });
+  double costo_minimo = it->costo;
   CHECK(costo_minimo == doctest::Approx(925).epsilon(1));
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

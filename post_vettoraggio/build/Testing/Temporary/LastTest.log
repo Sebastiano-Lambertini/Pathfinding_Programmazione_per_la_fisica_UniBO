@@ -1,0 +1,31 @@
+Start testing: Jul 05 14:45 CEST
+----------------------------------------------------------
+1/1 Testing: progetto.t
+1/1 Test: progetto.t
+Command: "/home/lambe/PPF/caso/route/repo/repo_route/post_vettoraggio/build/Release/progetto.t"
+Directory: /home/lambe/PPF/caso/route/repo/repo_route/post_vettoraggio/build
+"progetto.t" start time: Jul 05 14:45 CEST
+Output:
+----------------------------------------------------------
+/usr/include/c++/13/bits/stl_vector.h:1128: constexpr std::vector<_Tp, _Alloc>::reference std::vector<_Tp, _Alloc>::operator[](size_type) [with _Tp = pf::Punto; _Alloc = std::allocator<pf::Punto>; reference = pf::Punto&; size_type = long unsigned int]: Assertion '__n < this->size()' failed.
+[doctest] doctest version is "2.4.12"
+[doctest] run with "--help" for options
+innnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn===============================================================================
+/home/lambe/PPF/caso/route/repo/repo_route/post_vettoraggio/test.cpp:35:
+TEST CASE:  filtra_percorsi: tutti i percorsi entro 1.2x il costo minimo
+
+/home/lambe/PPF/caso/route/repo/repo_route/post_vettoraggio/test.cpp:35: FATAL ERROR: test case CRASHED: SIGABRT - Abort (abnormal termination) signal
+
+===============================================================================
+[doctest] test cases: 1 | 0 passed | 1 failed | 15 skipped
+[doctest] assertions: 0 | 0 passed | 0 failed |
+[doctest] Status: FAILURE!
+<end of output>
+Test time =   0.05 sec
+----------------------------------------------------------
+Test Failed.
+"progetto.t" end time: Jul 05 14:45 CEST
+"progetto.t" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Jul 05 14:45 CEST

@@ -41,21 +41,11 @@
 #include <cstddef>
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <unordered_set>
 #include <vector>
 namespace pf {
-std::vector<Path> // funzione wrapper
-final_aggiratore(const Point &A, const Point &B,
-                 const std::vector<std::vector<bool>> &griglia) {
-  assert(!griglia.empty());
-  assert(!griglia[0].empty());
-  Grid grid(griglia);
-  grid.controlla_id_ostacolo();
-  std::vector<Path> allPaths = trova_paths(A, B, grid);
-  std::vector<Path> paths = filtra_paths(allPaths);
-  return paths;
-}
 
 size_t salta_virgolette_spazi(const std::string &linea, size_t inizio) {
   while (inizio < linea.size() &&
@@ -90,41 +80,41 @@ int trova_simbolo(const std::string &linea) {
 
 // per la stringa: linea, se rappresenta un simbolo, trova id corrispondente, si
 // crea così il vettore di simboli-id
-id_to_symbol ids_to_symbols(const std::string &linea) {
+Associazione_id_simbolo ids_a_simboli(const std::string &linea) {
   size_t inizio_id{0};
-  size_t inizio_symbol{0};
+  size_t inizio_simbolo{0};
   if (linea.find("id=") != std::string::npos &&
       linea.find("code=") != std::string::npos) {
     inizio_id = salta_virgolette_spazi(linea, 3 + linea.find("id="));
-    inizio_symbol = salta_virgolette_spazi(linea, 5 + linea.find("code="));
+    inizio_simbolo = salta_virgolette_spazi(linea, 5 + linea.find("code="));
   } else {
     return {-1, -1};
   }
   std::string numero_id;
-  std::string numero_symbol;
+  std::string numero_simbolo;
   while (inizio_id < linea.size() && isdigit(linea[inizio_id])) {
     numero_id += linea[inizio_id];
     ++inizio_id;
   }
-  while (inizio_symbol < linea.size() && isdigit(linea[inizio_symbol])) {
-    numero_symbol += linea[inizio_symbol];
-    ++inizio_symbol;
+  while (inizio_simbolo < linea.size() && isdigit(linea[inizio_simbolo])) {
+    numero_simbolo += linea[inizio_simbolo];
+    ++inizio_simbolo;
   }
-  if (numero_id.empty() || numero_symbol.empty()) {
+  if (numero_id.empty() || numero_simbolo.empty()) {
     return {-1, -1};
   }
-  return id_to_symbol{std::stoi(numero_id), std::stoi(numero_symbol)};
+  return Associazione_id_simbolo{std::stoi(numero_id), std::stoi(numero_simbolo)};
 }
 
 // da simboli vietati/pieni(iof), trova id vietati/pieni, utilizzando il vettore
-// ottenuto dai vari id_to_symbol
+// ottenuto dai vari Associazione_id_simbolo
 std::vector<int>
-trova_id_vietati_pieni(const std::vector<id_to_symbol> &ids_symbols,
+trova_associazione_per_id_vietati_o_pieni(const std::vector<Associazione_id_simbolo> &ids_simboli,
                        const std::vector<int> &vietati_o_pieni) {
   std::vector<int> risultato{};
-  for (const auto &coppia : ids_symbols) {
+  for (const auto &coppia : ids_simboli) {
     for (int simbolo_vietato : vietati_o_pieni) {
-      if (coppia.symbol == simbolo_vietato) {
+      if (coppia.simbolo == simbolo_vietato) {
         risultato.push_back(coppia.id);
       }
     }
@@ -134,19 +124,19 @@ trova_id_vietati_pieni(const std::vector<id_to_symbol> &ids_symbols,
 
 double calcola_fattore_scala() {
   std::cout << "Inserire scala della mappa (se è 1:4000, scrivere 4000)\n";
-  double scala = 0;
+  double scala = 0.;
   if (!(std::cin >> scala)) {
     std::cout << "Input non valido\n";
-    return 1.0;
+    throw std::runtime_error{"Scala non numerica"};
   }
   assert(scala > 0);
   return scala / 1000000;
 }
 
 // Funzione per trovare tutte le coordinate================================
-std::vector<Point> estrai_coordinate(const std::string &linea,
+std::vector<Punto> estrai_coordinate(const std::string &linea,
                                      const double fattore_scala) {
-  std::vector<Point> punti{};
+  std::vector<Punto> punti{};
   std::string stringa_coordinate{};
   auto inizio = linea.find("<coords");
   if (inizio != std::string::npos) {
@@ -165,11 +155,11 @@ std::vector<Point> estrai_coordinate(const std::string &linea,
   std::vector<std::string> token;
   size_t pos = 0;
   while (pos < stringa_coordinate.size()) {
-    size_t end = stringa_coordinate.find(';', pos);
-    if (end == std::string::npos) {
-      end = stringa_coordinate.size();
+    size_t fine = stringa_coordinate.find(';', pos);
+    if (fine == std::string::npos) {
+      fine = stringa_coordinate.size();
     }
-    std::string pezzo = stringa_coordinate.substr(pos, end - pos);
+    std::string pezzo = stringa_coordinate.substr(pos, fine - pos);
     // rimuove spazi iniziali/finali
     size_t primo = pezzo.find_first_not_of(" \t");
     if (primo != std::string::npos) {
@@ -179,7 +169,7 @@ std::vector<Point> estrai_coordinate(const std::string &linea,
         token.push_back(pezzo);
       }
     }
-    pos = end + 1;
+    pos = fine + 1;
   }
 
   // struct punto+flag
@@ -191,17 +181,17 @@ std::vector<Point> estrai_coordinate(const std::string &linea,
   std::vector<PuntoFlag> punti_flag;
   for (const auto &t : token) {
     std::vector<std::string> parti;
-    size_t start = 0;
-    while (start < t.size()) {
-      size_t sp = t.find(' ', start);
+    size_t inizio = 0;
+    while (inizio < t.size()) {
+      size_t sp = t.find(' ', inizio);
       if (sp == std::string::npos) {
         sp = t.size();
       }
-      std::string part = t.substr(start, sp - start);
-      if (!part.empty()) {
-        parti.push_back(part);
+      std::string parte = t.substr(inizio, sp - inizio);
+      if (!parte.empty()) {
+        parti.push_back(parte);
       }
-      start = sp + 1;
+      inizio = sp + 1;
     }
     if (parti.size() >= 2) {
       double x = std::stod(parti[0]);
@@ -308,8 +298,8 @@ std::vector<Point> estrai_coordinate(const std::string &linea,
 
 void calcola_dimensioni_max_min(
     const std::vector<oggetto_poligonale_vietato> &oggetti, double &min_x,
-    double &max_x, double &min_y, double &max_y, const Point &arrivo,
-    const Point &partenza) {
+    double &max_x, double &min_y, double &max_y, const Punto &arrivo,
+    const Punto &partenza) {
 
   min_x = std::min(arrivo.x, partenza.x);
   max_x = std::max(arrivo.x, partenza.x);
@@ -375,8 +365,8 @@ bool calcola_intersezione(int x1, int y1, int x2, int y2, int y, int &x) {
 }
 
 // per ogni poligono, per ogni riga, dopo che da un lato numero di intersezioni
-// è dispari, riempie ====> controllo se è pieno in oggetti_to_griglia
-void riempi_poligoni(std::vector<std::vector<bool>> &griglia,
+// è dispari, riempie ====> controllo se è pieno in oggetti_a_griglia
+void riempi_poligoni(std::vector<std::vector<TipoCella>> &griglia,
                      const std::vector<std::pair<int, int>> &poligono,
                      int larghezza_griglia, int altezza_griglia) {
   assert(larghezza_griglia > 0);
@@ -418,7 +408,9 @@ void riempi_poligoni(std::vector<std::vector<bool>> &griglia,
         for (int x = intersezioni[i]; x <= intersezioni[i + 1]; ++x) {
           if (x >= 0 && x < larghezza_griglia && y >= 0 &&
               y < altezza_griglia) {
-            griglia[static_cast<size_t>(y)][static_cast<size_t>(x)] = false;
+            griglia[static_cast<size_t>(y)][static_cast<size_t>(x)] =
+                TipoCella::non_oltrepassabile;
+            // grid.rendi_non_oltrepassabile( y, x);
           }
         }
       }
@@ -428,7 +420,7 @@ void riempi_poligoni(std::vector<std::vector<bool>> &griglia,
 
 // user decide se verde 3(per anni è stato non oltrepassabile, ora è
 // oltrepassabile)
-void verde3_oltrepassabile(std::vector<int> &ids_vietati,
+void chiedi_verde3_oltrepassabile(std::vector<int> &ids_vietati,
                            std::vector<int> &ids_pieni) {
   std::cout << "Il verde 3 è oltrepassabile? (y/n)\n";
   std::string risposta;
@@ -443,10 +435,10 @@ void verde3_oltrepassabile(std::vector<int> &ids_vietati,
 }
 
 // per ogni oggetto lo disegna sulla griglia, linee con bresenham
-void oggetti_to_griglia(const oggetto_poligonale_vietato &oggetto,
-                        std::vector<std::vector<bool>> &griglia, double min_x,
-                        double max_x, double min_y, double max_y,
-                        int larghezza_griglia, int altezza_griglia) {
+void oggetti_a_griglia(const oggetto_poligonale_vietato &oggetto,
+                       std::vector<std::vector<TipoCella>> &griglia,
+                       double min_x, double max_x, double min_y, double max_y,
+                       int larghezza_griglia, int altezza_griglia) {
 
   assert(larghezza_griglia > 0);
   assert(altezza_griglia > 0);
@@ -468,7 +460,8 @@ void oggetti_to_griglia(const oggetto_poligonale_vietato &oggetto,
 
     while (true) {
       if (x >= 0 && x < larghezza_griglia && y >= 0 && y < altezza_griglia) {
-        griglia[static_cast<size_t>(y)][static_cast<size_t>(x)] = false;
+        griglia[static_cast<size_t>(y)][static_cast<size_t>(x)] =
+            TipoCella::non_oltrepassabile;
       }
 
       if (x == x2 && y == y2) {
@@ -512,7 +505,7 @@ void oggetti_to_griglia(const oggetto_poligonale_vietato &oggetto,
 
 // aumenta di spessore di raggio 1 tutto per evitare gli attraversamenti in
 // diagonale delle linee di spessore 1
-void dilata_ostacoli(std::vector<std::vector<bool>> &griglia) {
+void dilata_ostacoli(std::vector<std::vector<TipoCella>> &griglia) {
   const int altezza = static_cast<int>(griglia.size());
   if (altezza == 0) {
     return;
@@ -525,8 +518,8 @@ void dilata_ostacoli(std::vector<std::vector<bool>> &griglia) {
 
   for (int y = 0; y < altezza; ++y) {
     for (int x = 0; x < larghezza; ++x) {
-      if (!griglia[static_cast<size_t>(y)]
-                  [static_cast<size_t>(x)]) // cella vietata
+      if (griglia[static_cast<size_t>(y)][static_cast<size_t>(x)] ==
+          TipoCella::non_oltrepassabile) // cella vietata
       {
         for (int dy = -1; dy <= 1; ++dy) {
           for (int dx = -1; dx <= 1; ++dx) {
@@ -535,7 +528,7 @@ void dilata_ostacoli(std::vector<std::vector<bool>> &griglia) {
 
             if (nx >= 0 && nx < larghezza && ny >= 0 && ny < altezza) {
               nuova_griglia[static_cast<size_t>(ny)][static_cast<size_t>(nx)] =
-                  false;
+                  TipoCella::non_oltrepassabile;
             }
           }
         }
@@ -546,54 +539,54 @@ void dilata_ostacoli(std::vector<std::vector<bool>> &griglia) {
   griglia = std::move(nuova_griglia);
 }
 
-double costo_path_geometrico_mondo(
-    const std::vector<Point>
-        &path, // per calcolare il costo effettivo serve ritrasformare le
-               // coordinate in quelle del mondo e poi calcolare
+double costo_percorso_geometrico_mondo(
+    const std::vector<Punto>
+        &percorso, // per calcolare il costo effettivo serve ritrasformare le
+                   // coordinate in quelle del mondo e poi calcolare
     double min_x, double max_x, double min_y, double max_y,
     int larghezza_griglia, int altezza_griglia, double fattore_scala) {
-  if (path.size() < 2)
+  if (percorso.size() < 2)
     return 0.0;
 
-  auto to_world = [&](const Point &p) {
+  auto trasforma_a_mondo = [&](const Punto &p) {
     double x = min_x + (p.x + 0.5) * (max_x - min_x) / larghezza_griglia;
     double y = max_y - (p.y + 0.5) * (max_y - min_y) / altezza_griglia;
 
     return std::pair<double, double>{x / fattore_scala, y / fattore_scala};
   };
 
-  double cost = 0.0;
+  double costo = 0.0;
 
-  auto prev = to_world(path[0]);
+  auto precedente = trasforma_a_mondo(percorso[0]);
 
-  for (size_t i = 1; i < path.size(); ++i) {
-    auto cur = to_world(path[i]);
+  for (size_t i = 1; i < percorso.size(); ++i) {
+    auto corrente = trasforma_a_mondo(percorso[i]);
 
-    double dx = cur.first - prev.first;
-    double dy = cur.second - prev.second;
+    double dx = corrente.first - precedente.first;
+    double dy = corrente.second - precedente.second;
 
-    cost += std::hypot(dx, dy);
+    costo += std::hypot(dx, dy);
 
-    prev = cur;
+    precedente = corrente;
   }
 
-  return cost * 4 / 1000;
+  return costo * 4 / 1000;
 }
 
 // esporta in un altro file omap
-void esporta_percorso_omap(const std::string &filename_input,
-                           const std::string &filename_output,
-                           const std::vector<Path> &paths,
-                           const std::vector<id_to_symbol> &ids_symbols,
+void esporta_percorso_omap(const std::string &nome_file_input,
+                           const std::string &nome_file_output,
+                           const std::vector<Percorso> &percorsi,
+                           const std::vector<Associazione_id_simbolo> &ids_simboli,
                            double min_x, double max_x, double min_y,
                            double max_y, int larghezza_griglia,
                            int altezza_griglia, double fattore_scala) {
 
-  assert(!paths.empty());
-  assert(!ids_symbols.empty());
+  assert(!percorsi.empty());
+  assert(!ids_simboli.empty());
 
-  std::ifstream in(filename_input);   // input
-  std::ofstream out(filename_output); // output
+  std::ifstream in(nome_file_input);   // input
+  std::ofstream out(nome_file_output); // output
 
   if (!in.is_open() || !out.is_open()) {
     std::cerr << "Errore apertura file\n";
@@ -601,8 +594,8 @@ void esporta_percorso_omap(const std::string &filename_input,
   }
 
   int id_linea_disegno{0};
-  for (const auto &coppia : ids_symbols) {
-    if (coppia.symbol == 704) {
+  for (const auto &coppia : ids_simboli) {
+    if (coppia.simbolo == 704) {
       id_linea_disegno = coppia.id;
       break;
     }
@@ -620,24 +613,24 @@ void esporta_percorso_omap(const std::string &filename_input,
         linea.find("</objects>") !=
             std::string::npos) { // trova dove c'è l'ultimo oggetto
       out << "Qui iniziano i percorsi\n";
-      for (const auto &path : paths) {
-        auto percorso = path.points;
+      for (const auto &percorso : percorsi) {
+        auto punti_percorso = percorso.punti;
         out << "      <object type=\"1\" symbol=\""
             << id_linea_disegno // inserisce i percorsi
             << "\">";
-        out << "        <coords count=\"" << percorso.size() << "\">";
+        out << "        <coords count=\"" << punti_percorso.size() << "\">";
 
-        for (size_t i = 0; i < percorso.size(); ++i) {
-          double x_mondo = min_x + (percorso[i].x + 0.5) * (max_x - min_x) /
-                                       larghezza_griglia;
-          double y_mondo =
-              max_y - (percorso[i].y + 0.5) * (max_y - min_y) / altezza_griglia;
+        for (size_t i = 0; i < punti_percorso.size(); ++i) {
+          double x_mondo = min_x + (punti_percorso[i].x + 0.5) *
+                                       (max_x - min_x) / larghezza_griglia;
+          double y_mondo = max_y - (punti_percorso[i].y + 0.5) *
+                                       (max_y - min_y) / altezza_griglia;
 
           int x_f = static_cast<int>(x_mondo / fattore_scala);
           int y_f = static_cast<int>(y_mondo / fattore_scala);
 
           out << (x_f) << " " << (y_f);
-          if (i < (percorso.size() - 1)) {
+          if (i < (punti_percorso.size() - 1)) {
             out << ";";
           } else {
             out << " 16;"; // flag finale delle coordinate
@@ -648,7 +641,7 @@ void esporta_percorso_omap(const std::string &filename_input,
         out << "<pattern rotation=\"0\"><coord x=\"0\" "
                "y=\"0\"/></pattern>";
         out << "</object>\n";
-        out << "costo del percorso precedente:" << path.cost
+        out << "costo del percorso precedente:" << percorso.costo
             << "m\n"; // conversione lunghezza percorsi
       }
       out << "Qui finiscono i percorsi";
@@ -660,11 +653,420 @@ void esporta_percorso_omap(const std::string &filename_input,
 
   in.close();
   out.close(); // chiude i file
-  std::cout << "File OMAP con percorso salvato: " << filename_output << "\n";
+  std::cout << "File OMAP con percorso salvato: " << nome_file_output << "\n";
+}
+
+
+
+
+std::vector<Associazione_id_simbolo>
+leggi_ids_simboli(std::ifstream& file) {
+
+  std::vector<Associazione_id_simbolo> ids_simboli;
+  std::string linea;
+
+  while (std::getline(file, linea)) {
+
+    if (linea.find("<symbol") == std::string::npos) {
+      continue;
+    }
+
+    if (linea.find("id=") == std::string::npos) {
+      continue;
+    }
+
+    Associazione_id_simbolo coppia = ids_a_simboli(linea);
+
+    if (coppia.id != -1 && coppia.simbolo != -1) {
+      ids_simboli.push_back(coppia);
+    }
+  }
+
+  return ids_simboli;
+}
+
+Insiemi_simboli
+costruisci_insiemi_simboli(
+    const std::vector<Associazione_id_simbolo>& ids_simboli) {
+
+  std::vector<int> vietati{
+      206,301,307,411,515,518,
+      520,521,708,709,714};
+
+  std::vector<int> pieni{
+      206,301,307,411,
+      520,521,709,714};
+
+  chiedi_verde3_oltrepassabile(vietati, pieni);
+
+  std::vector<int> ids_vietati =
+      trova_associazione_per_id_vietati_o_pieni(ids_simboli, vietati);
+
+  std::vector<int> ids_pieni =
+      trova_associazione_per_id_vietati_o_pieni(ids_simboli, pieni);
+
+  return {
+      {ids_vietati.begin(), ids_vietati.end()},
+      {ids_pieni.begin(), ids_pieni.end()}
+  };
+}
+
+Posizioni_partenza_arrivo trova_partenza_arrivo(
+    const std::vector<Associazione_id_simbolo>& ids_simboli) {
+
+  Posizioni_partenza_arrivo risultato;
+
+  for (const auto& coppia : ids_simboli) {
+
+    if (coppia.simbolo == 701) {
+      risultato.partenza = coppia.id;
+    }
+
+    if (coppia.simbolo == 706) {
+      risultato.arrivo = coppia.id;
+    }
+  }
+
+  return risultato;
+}
+
+Dati_mappa carica_oggetti_mappa(
+    std::ifstream& file,
+    int id_partenza,
+    int id_arrivo,
+    const std::unordered_set<int>& id_vietati,
+    const std::unordered_set<int>& id_pieni,
+    double fattore_scala) {
+
+  Dati_mappa dati;
+
+  std::string linea;
+
+  bool dentro_memoria = false;
+
+  file.clear();
+  file.seekg(0);
+
+  while (std::getline(file, linea)) {
+
+    if (linea.find("<undo>") != std::string::npos ||
+        linea.find("<redo>") != std::string::npos) {
+      dentro_memoria = true;
+      continue;
+    }
+
+    if (linea.find("</undo>") != std::string::npos ||
+        linea.find("</redo>") != std::string::npos) {
+      dentro_memoria = false;
+      continue;
+    }
+
+    if (dentro_memoria) {
+      continue;
+    }
+
+    if (linea.find("<object") == std::string::npos) {
+      continue;
+    }
+
+    std::string blocco = linea;
+
+    while (blocco.find("</object>") == std::string::npos &&
+           blocco.find("/>") == std::string::npos) {
+
+      std::string extra;
+
+      if (!std::getline(file, extra)) {
+        break;
+      }
+
+      blocco += " " + extra;
+    }
+
+    int id = trova_simbolo(blocco);
+
+    std::vector<Punto> coordinate =
+        estrai_coordinate(blocco, fattore_scala);
+
+    if (coordinate.empty()) {
+      continue;
+    }
+
+    if (id == id_partenza) {
+      dati.partenza_mondo = coordinate[0];
+      dati.partenza_trovata = true;
+    }
+
+    if (id == id_arrivo) {
+      dati.arrivo_mondo = coordinate[0];
+      dati.arrivo_trovato = true;
+    }
+
+    if (id_vietati.contains(id)) {
+
+      bool pieno = id_pieni.contains(id);
+
+      dati.oggetti_vietati.push_back(
+          {id, coordinate, pieno});
+    }
+  }
+
+  return dati;
+}
+
+Dati_griglia costruisci_griglia(
+    const std::vector<oggetto_poligonale_vietato>& oggetti,
+    const Punto& partenza,
+    const Punto& arrivo) {
+
+  Dati_griglia dati;
+
+  calcola_dimensioni_max_min(
+      oggetti,
+      dati.min_x,
+      dati.max_x,
+      dati.min_y,
+      dati.max_y,
+      arrivo,
+      partenza);
+
+  constexpr int RISOLUZIONE = 800;
+
+  double larghezza_mondo =
+      dati.max_x - dati.min_x;
+
+  double altezza_mondo =
+      dati.max_y - dati.min_y;
+
+  dati.larghezza = RISOLUZIONE;
+
+  dati.altezza =
+      static_cast<int>(
+          RISOLUZIONE *
+          (altezza_mondo / larghezza_mondo));
+
+  if (dati.altezza < 1) {
+    dati.altezza = RISOLUZIONE;
+  }
+
+  dati.griglia.assign(
+      static_cast<size_t>(dati.altezza),
+      std::vector<TipoCella>(
+          static_cast<size_t>(dati.larghezza),
+          TipoCella::oltrepassabile));
+
+  for (const auto& oggetto : oggetti) {
+
+    oggetti_a_griglia(
+        oggetto,
+        dati.griglia,
+        dati.min_x,
+        dati.max_x,
+        dati.min_y,
+        dati.max_y,
+        dati.larghezza,
+        dati.altezza);
+  }
+
+  dilata_ostacoli(dati.griglia);
+
+  return dati;
+}
+
+Partenza_arrivo_griglia converti_partenza_arrivo_griglia(
+    const Dati_griglia& dati,
+    const Punto& partenza_mondo,
+    const Punto& arrivo_mondo) {
+
+  int px, py;
+  int ax, ay;
+
+  mondo_a_griglia(
+      partenza_mondo.x,
+      partenza_mondo.y,
+      dati.min_x,
+      dati.max_x,
+      dati.min_y,
+      dati.max_y,
+      dati.larghezza,
+      dati.altezza,
+      px,
+      py);
+
+  mondo_a_griglia(
+      arrivo_mondo.x,
+      arrivo_mondo.y,
+      dati.min_x,
+      dati.max_x,
+      dati.min_y,
+      dati.max_y,
+      dati.larghezza,
+      dati.altezza,
+      ax,
+      ay);
+
+  return {
+      Punto(px, py),
+      Punto(ax, ay)
+  };
+}
+
+void stampa_statistiche_percorsi(
+    const std::vector<Percorso>& percorsi,
+    const Dati_costo_percorsi& dati) {
+
+  std::cout << "Trovati " << percorsi.size()
+            << " percorsi entro +20% del migliore:\n\n";
+
+  std::cout << "Percorsi di lunghezza:\n";
+
+  for (size_t k = 0; k < percorsi.size(); k++) {
+    std::cout << costo_percorso_geometrico_mondo(
+                     percorsi[k].punti,
+                     dati.min_x, dati.max_x,
+                     dati.min_y, dati.max_y,
+                     dati.larghezza_griglia,
+                     dati.altezza_griglia,
+                     dati.fattore_scala)
+              << "m\n";
+  }
+}
+
+void esporta_griglia_csv(
+    const std::string& nome_file,
+    const std::vector<std::vector<TipoCella>>& griglia,
+    const Punto& partenza,
+    const Punto& arrivo,
+    bool partenza_valida,
+    bool arrivo_valido) {
+
+  std::ofstream csv(nome_file);
+
+  if (!csv.is_open()) {
+    std::cout << "Errore apertura CSV\n";
+    return;
+  }
+
+  int altezza = static_cast<int>(griglia.size());
+  int larghezza = static_cast<int>(griglia[0].size());
+
+  csv << altezza << "," << larghezza << "\n";
+
+  for (int y = 0; y < altezza; ++y) {
+    for (int x = 0; x < larghezza; ++x) {
+
+      if (partenza_valida && x == partenza.x && y == partenza.y) {
+        csv << "S";
+      }
+      else if (arrivo_valido && x == arrivo.x && y == arrivo.y) {
+        csv << "A";
+      }
+      else {
+        csv << (griglia[y][x] == TipoCella::non_oltrepassabile ? "0" : "1");
+      }
+
+      if (x < larghezza - 1) csv << ",";
+    }
+    csv << "\n";
+  }
+}
+
+std::vector<Percorso>
+aiuto_main2(const std::string& nome_file) {
+
+  std::ifstream file(nome_file);
+
+  if (!file.is_open()) {
+    std::cout << "File non trovato\n";
+    return {};
+  }
+
+  double fattore_scala =
+      calcola_fattore_scala();
+
+  auto ids_simboli =
+      leggi_ids_simboli(file);
+
+  auto insiemi_simboli =
+      costruisci_insiemi_simboli(ids_simboli);
+
+  auto ids_partenza_arrivo =
+      trova_partenza_arrivo(ids_simboli);
+
+  auto dati_mappa =
+      carica_oggetti_mappa(
+          file,
+          ids_partenza_arrivo.partenza,
+          ids_partenza_arrivo.arrivo,
+          insiemi_simboli.vietati,
+          insiemi_simboli.pieni,
+          fattore_scala);
+
+  auto dati_griglia =
+      costruisci_griglia(
+          dati_mappa.oggetti_vietati,
+          dati_mappa.partenza_mondo,
+          dati_mappa.arrivo_mondo);
+
+  auto estremi =
+      converti_partenza_arrivo_griglia(
+          dati_griglia,
+          dati_mappa.partenza_mondo,
+          dati_mappa.arrivo_mondo);
+if (!dati_mappa.partenza_trovata ||
+    !dati_mappa.arrivo_trovato) {
+
+  std::cout << "Partenza o arrivo non trovati\n";
+  return {};
+}
+  auto percorsi =
+      trova_percorsi_con_algoritmo_completo(
+          estremi.partenza,
+          estremi.arrivo,
+          dati_griglia.griglia);
+// OUTPUT SEPARATO
+Dati_costo_percorsi dati_costo{
+    dati_griglia.min_x,
+    dati_griglia.max_x,
+    dati_griglia.min_y,
+    dati_griglia.max_y,
+    dati_griglia.larghezza,
+    dati_griglia.altezza,
+    fattore_scala
+};
+
+stampa_statistiche_percorsi(
+    percorsi,
+    dati_costo);
+
+  esporta_griglia_csv(
+      "griglia.csv",
+      dati_griglia.griglia,
+      estremi.partenza,
+      estremi.arrivo,
+      dati_mappa.partenza_trovata,
+      dati_mappa.arrivo_trovato);
+
+  if (!percorsi.empty()) {
+    esporta_percorso_omap(
+        nome_file,
+        "mappa_con_percorso.omap",
+        percorsi,
+        ids_simboli,
+        dati_griglia.min_x,
+        dati_griglia.max_x,
+        dati_griglia.min_y,
+        dati_griglia.max_y,
+        dati_griglia.larghezza,
+        dati_griglia.altezza,
+        fattore_scala);
+  }
+
+  return percorsi;
 }
 
 // tutto il main ma non nel main(per test su file omap)
-std::vector<Path> helper_main(const std::string &nome_file) {
+std::vector<Percorso> aiuto_main(const std::string &nome_file) {
 
   std::vector<int> vietati{206, 301, 307, 411, 515, 518,
                            520, 521, 708, 709, 714}; // simboli generali vietati
@@ -672,12 +1074,12 @@ std::vector<Path> helper_main(const std::string &nome_file) {
                          520, 521, 709, 714}; // simboli generali pieni
   int id_arrivo{0};
   int id_partenza{0};
-  bool in_undo_redo = false;
+  bool dentro_memoria = false;
   std::unordered_set<int> id_vietati{};
   std::unordered_set<int> id_pieni{};
-  std::vector<id_to_symbol> ids_symbols{};
-  Point partenza_mondo;
-  Point arrivo_mondo;
+  std::vector<Associazione_id_simbolo> ids_simboli{};
+  Punto partenza_mondo;
+  Punto arrivo_mondo;
   bool partenza_trovata = false;
   bool arrivo_trovato = false;
   std::string linea;
@@ -691,25 +1093,25 @@ std::vector<Path> helper_main(const std::string &nome_file) {
   while (std::getline(file, linea)) {
     if (linea.find("id=") != std::string::npos &&
         linea.find("<symbol") != std::string::npos) {
-      id_to_symbol coppia = ids_to_symbols(linea);
-      if (coppia.id != -1 && coppia.symbol != -1) {
-        ids_symbols.push_back(coppia);
+      Associazione_id_simbolo coppia = ids_a_simboli(linea);
+      if (coppia.id != -1 && coppia.simbolo != -1) {
+        ids_simboli.push_back(coppia);
       }
     }
   }
-  assert(!ids_symbols.empty()); // almeno un simbolo
+  assert(!ids_simboli.empty()); // almeno un simbolo
 
-  verde3_oltrepassabile(vietati, pieni);
+  chiedi_verde3_oltrepassabile(vietati, pieni);
   std::vector<int> vettore_ids_vietati =
-      trova_id_vietati_pieni(ids_symbols, vietati);
+      trova_associazione_per_id_vietati_o_pieni(ids_simboli, vietati);
   std::vector<int> vettore_ids_pieni =
-      trova_id_vietati_pieni(ids_symbols, pieni);
+      trova_associazione_per_id_vietati_o_pieni(ids_simboli, pieni);
   id_vietati = {vettore_ids_vietati.begin(), vettore_ids_vietati.end()};
   id_pieni = {vettore_ids_pieni.begin(), vettore_ids_pieni.end()};
-  for (const auto &coppia : ids_symbols) {
-    if (coppia.symbol == 706) {
+  for (const auto &coppia : ids_simboli) {
+    if (coppia.simbolo == 706) {
       id_arrivo = coppia.id;
-    } else if (coppia.symbol == 701) {
+    } else if (coppia.simbolo == 701) {
       id_partenza = coppia.id;
     }
   }
@@ -722,15 +1124,15 @@ std::vector<Path> helper_main(const std::string &nome_file) {
       file, linea)) { // serve per non leggere come oggetti quelli degli undo
     if ((linea.find("<undo>") != std::string::npos) ||
         (linea.find("<redo>") != std::string::npos)) {
-      in_undo_redo = true;
+      dentro_memoria = true;
       continue;
     }
     if ((linea.find("</undo>") != std::string::npos) ||
         (linea.find("</redo>") != std::string::npos)) {
-      in_undo_redo = false;
+      dentro_memoria = false;
       continue;
     }
-    if (in_undo_redo) {
+    if (dentro_memoria) {
       continue;
     }
     if (linea.find("<object") != std::string::npos) {
@@ -747,7 +1149,7 @@ std::vector<Path> helper_main(const std::string &nome_file) {
       }
       int id = trova_simbolo(blocco);
       if (id == id_partenza) {
-        std::vector<Point> coordinate =
+        std::vector<Punto> coordinate =
             estrai_coordinate(blocco, fattore_scala);
         if (!coordinate.empty()) {
           partenza_mondo = coordinate[0];
@@ -755,7 +1157,7 @@ std::vector<Path> helper_main(const std::string &nome_file) {
         }
       }
       if (id == id_arrivo) {
-        std::vector<Point> coordinate =
+        std::vector<Punto> coordinate =
             estrai_coordinate(blocco, fattore_scala);
         if (!coordinate.empty()) {
           arrivo_mondo = coordinate[0];
@@ -763,7 +1165,7 @@ std::vector<Path> helper_main(const std::string &nome_file) {
         }
       }
       if (id != -1 && id_vietati.contains(id)) {
-        std::vector<Point> coordinate =
+        std::vector<Punto> coordinate =
             estrai_coordinate(blocco, fattore_scala);
         bool pienezza = (id_pieni.contains(id));
         if (!coordinate.empty()) {
@@ -789,12 +1191,13 @@ std::vector<Path> helper_main(const std::string &nome_file) {
   assert(larghezza_griglia > 0);
   assert(altezza_griglia > 0);
 
-  std::vector<std::vector<bool>> griglia(
+  std::vector<std::vector<TipoCella>> griglia(
       static_cast<size_t>(altezza_griglia),
-      std::vector<bool>(static_cast<size_t>(larghezza_griglia), true));
+      std::vector<TipoCella>(static_cast<size_t>(larghezza_griglia),
+                             TipoCella::oltrepassabile));
   for (const auto &ogg : oggetti_vietati) {
-    oggetti_to_griglia(ogg, griglia, min_x, max_x, min_y, max_y,
-                       larghezza_griglia, altezza_griglia); // prima gli oggetti
+    oggetti_a_griglia(ogg, griglia, min_x, max_x, min_y, max_y,
+                      larghezza_griglia, altezza_griglia); // prima gli oggetti
     /*std::cout << "  Rasterizzato ID=" << ogg.id << " (" << ogg.contorno.size()
               << " punti, " << (ogg.e_pieno ? "pieno" : "linea") << ")\n";*/
   }
@@ -815,23 +1218,24 @@ std::vector<Path> helper_main(const std::string &nome_file) {
   assert(partenza_trovata);
   assert(arrivo_trovato);
 
-  Point partenza(partenza_gx, partenza_gy);
-  Point arrivo(arrivo_gx, arrivo_gy);
-  Grid grid(griglia);
+  Punto partenza(partenza_gx, partenza_gy);
+  Punto arrivo(arrivo_gx, arrivo_gy);
+  // Griglia rendi_griglia(griglia);
 
-  std::vector<Path> paths = final_aggiratore(partenza, arrivo, griglia);
+  std::vector<Percorso> percorsi =
+      trova_percorsi_con_algoritmo_completo(partenza, arrivo, griglia);
 
   /*std::cout << partenza_trovata << "\n";
   std::cout << "coordinate partenza" << partenza_gx << "," << partenza_gy
             << "\n coordinate arrivo" << arrivo_gx << "," << arrivo_gy <<
   "\n";*/
-  std::cout << "Trovati " << paths.size()
+  std::cout << "Trovati " << percorsi.size()
             << " percorsi entro +20% del migliore:\n\n";
   std::cout << "Percorsi di lunghezza:\n";
-  for (size_t k = 0; k < paths.size(); k++) {
-    std::cout << costo_path_geometrico_mondo(paths[k].points, min_x, max_x,
-                                             min_y, max_y, larghezza_griglia,
-                                             altezza_griglia, fattore_scala)
+  for (size_t k = 0; k < percorsi.size(); k++) {
+    std::cout << costo_percorso_geometrico_mondo(
+                     percorsi[k].punti, min_x, max_x, min_y, max_y,
+                     larghezza_griglia, altezza_griglia, fattore_scala)
               << "m\n";
   }
   std::ofstream csv("griglia.csv");
@@ -844,7 +1248,8 @@ std::vector<Path> helper_main(const std::string &nome_file) {
         } else if (arrivo_trovato && x == arrivo_gx && y == arrivo_gy) {
           csv << "A";
         } else {
-          csv << (griglia[static_cast<size_t>(y)][static_cast<size_t>(x)]
+          csv << (griglia[static_cast<size_t>(y)][static_cast<size_t>(x)] ==
+                          TipoCella::non_oltrepassabile
                       ? "0"
                       : "1");
         }
@@ -859,11 +1264,11 @@ std::vector<Path> helper_main(const std::string &nome_file) {
   } else {
     std::cout << "Problemi nella creazione del file csv \n";
   }
-  if (!paths.empty()) {
-    esporta_percorso_omap(nome_file, "mappa_con_percorso.omap", paths,
-                          ids_symbols, min_x, max_x, min_y, max_y,
+  if (!percorsi.empty()) {
+    esporta_percorso_omap(nome_file, "mappa_con_percorso.omap", percorsi,
+                          ids_simboli, min_x, max_x, min_y, max_y,
                           larghezza_griglia, altezza_griglia, fattore_scala);
   }
-  return paths;
+  return percorsi;
 }
 } // namespace pf
