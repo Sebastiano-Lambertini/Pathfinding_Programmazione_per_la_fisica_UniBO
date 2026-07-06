@@ -13,7 +13,7 @@
 
 using namespace pf;
 
-/*static std::vector<Percorso> esegui_test_omap(const std::string &nome_file,
+static std::vector<Percorso> esegui_test_omap(const std::string &nome_file,
                                           double scala = 4000.0,
                                           char verde3 = 'n') {
 
@@ -25,12 +25,12 @@ using namespace pf;
   auto old_cin_buf = std::cin.rdbuf();
   std::cin.rdbuf(input_stream.rdbuf());
 
-  std::vector<Percorso> percorsi = aiuto_main(nome_file);
+  std::vector<Percorso> percorsi = aiuto_main2(nome_file);
 
   std::cin.rdbuf(old_cin_buf);
 
   return percorsi;
-}*/
+}
 
 TEST_CASE("filtra_percorsi: tutti i percorsi entro 1.2x il costo minimo") {
  
@@ -75,7 +75,7 @@ TEST_CASE(
 
   griglia.rendi_non_oltrepassabile(1,1);
 
-  griglia.rendi_non_oltrepassabile(3, 8);
+  griglia.rendi_non_oltrepassabile(8, 3);
 
   griglia.controlla_id_ostacolo();
 
@@ -304,7 +304,7 @@ TEST_CASE("vede_punto_di_arrivo: ostacolo leggermente spostato non blocca") {
       [](const Percorso &a, const Percorso &b) { return a.costo < b.cost; });
   double costo_minimo = it->cost;
   CHECK(costo_minimo == doctest::Approx(889).epsilon(1));
-}
+}*/
 
 TEST_CASE("Mappa con 1 ostacolo in mezzo") {
   auto percorsi = esegui_test_omap("test_su_omap2.omap");
@@ -349,7 +349,7 @@ TEST_CASE(
       [](const Percorso &a, const Percorso &b) { return a.costo < b.costo; });
   double costo_minimo = it->costo;
   CHECK(costo_minimo == doctest::Approx(925).epsilon(1));
-}*/
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // TESTO D'ESEMPIO PER PROVARE NON CON MAPPPER
 

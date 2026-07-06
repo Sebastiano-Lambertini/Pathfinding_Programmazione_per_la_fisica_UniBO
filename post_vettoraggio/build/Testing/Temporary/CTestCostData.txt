@@ -1,3 +1,2 @@
-progetto.t 0 0
+progetto.t 3 0.77426
 ---
-progetto.t

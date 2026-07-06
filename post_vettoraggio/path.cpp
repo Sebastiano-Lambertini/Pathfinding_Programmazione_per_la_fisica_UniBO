@@ -443,7 +443,7 @@ Bordo_e_uscita segui_il_bordo_in_un_verso_fino_a_uscita(
     if (!uscita_trovata && e_libero_spazio_in_direzione_arrivo(
                                corrente, destinazione, griglia, id_ostacolo)) {
       uscita_trovata = true;
-      passi_rimanenti = 4;
+      passi_rimanenti = 8;
     }
 
     int priorita[8];
@@ -544,7 +544,7 @@ double calcola_lunghezza_percorso(
   // costo effettivo ma mantiene proprzioni
   assert(percorso.size() >= 1);
   double costo = 0.0;
-  for (size_t i = 1; i != percorso.size(); ++i) {
+  for (std::size_t i = 1; i != percorso.size(); ++i) {
     costo += std::hypot(percorso[i].x - percorso[i - 1].x,
                         percorso[i].y - percorso[i - 1].y);
   }
@@ -617,16 +617,16 @@ semplifica_percorso_all_indietro(const std::vector<Punto> &percorso,
         i = migliore;
       } else { // se non vede nessun punto prima-> capita tra partenza/corrente
         // e punto_ingresso_bordo
-        /*int best = 0;
+        int best = 0;
         for (int k = i - 1; k != 0; --k) {
           if (griglia.e_oltrepassabile(corrente[k])) {
             best = k;
           }
-        }*/
-        std::cout << "BEST:" << griglia.e_oltrepassabile(corrente[/*best*/0]);
+        }
+        std::cout << "BEST:" << griglia.e_oltrepassabile(corrente[best]);
         std::cout << "BEST:" << griglia.e_oltrepassabile(corrente[i + 1]);
         std::vector<Percorso> percorsi_indietro = trova_percorsi(
-            corrente[/*best*/0], corrente[static_cast<size_t>(i + 1)],
+            corrente[best], corrente[static_cast<size_t>(i + 1)],
             griglia); // riapplica tutto l'algoritmo tra la partenza e il punto
                       // prima di quello che non vede altri punti dopo
 
@@ -687,7 +687,7 @@ semplifica_percorso_all_indietro_fino_a_stabilizzazione(
 // percorsi
 void costruisci_percorsi_ricorsivo(
     const Punto &corrente, const Punto &destinazione, const Griglia &griglia,
-    std::vector<Punto> &percorso_parziale, double costo_parziale,
+    std::vector<Punto> &percorso_parziale, 
     std::vector<Percorso> &percorsi_output, int profondita) {
   const int MAX_PROFONDITA = 8; // + di 8 volte rischia di esplodere
   assert(profondita >= 0);
@@ -704,7 +704,6 @@ std::cout<<"oneeeeeeeeeeeeeeeeeeeeeeeeee\n";
     Percorso p;
     p.punti = percorso_parziale;
     p.punti.insert(p.punti.end(), retta_finale.begin(), retta_finale.end());
-    p.costo = costo_parziale + calcola_lunghezza_percorso(retta_finale);
     // percorsi_output.push_back(p);//da attivare se si toglie
     // semplifica_percorso_all_indietro_fino_a_stabilizzazione
     //   pulisci ritorna una o più varianti
@@ -834,30 +833,10 @@ std::cout<<"oneeeeeeeeeeeeeeeeeeeeeeeeee\n";
         std::cout<<"cinqueeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\n";
     // calcola il costo, inutile tanto dopo verrà rifatto ma potrebbe diventarlo
     // se si filtra nel mentre
-    double nuovo_costo = costo_parziale;
 
-    // corrente -> punto_ingresso_bordo
-    for (size_t i = 1; i != segmento_corrente_punto_ingresso_bordo.size(); ++i) {
-          std::cout<<"vamosssssssssssssssssssssssss\n";
-      nuovo_costo +=
-          std::hypot(segmento_corrente_punto_ingresso_bordo[i].x -
-                         segmento_corrente_punto_ingresso_bordo[i - 1].x,
-                     segmento_corrente_punto_ingresso_bordo[i].y -
-                         segmento_corrente_punto_ingresso_bordo[i - 1].y);
-    }
-    std::cout<<"seiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiis\n";
-    // bordo punto_ingresso_bordo -> punto_uscita_bordo
-    for (size_t i = 1;
-         i != bordo_punto_ingresso_bordo_a_punto_uscita_bordo.size(); ++i) {
-      nuovo_costo += std::hypot(
-          bordo_punto_ingresso_bordo_a_punto_uscita_bordo[i].x -
-              bordo_punto_ingresso_bordo_a_punto_uscita_bordo[i - 1].x,
-          bordo_punto_ingresso_bordo_a_punto_uscita_bordo[i].y -
-              bordo_punto_ingresso_bordo_a_punto_uscita_bordo[i - 1].y);
-    }
 std::cout<<"profondità: "<<profondita<<'\n';
     costruisci_percorsi_ricorsivo(punto_uscita_bordo, destinazione, griglia,
-                                  nuovo_percorso, nuovo_costo, percorsi_output,
+                                  nuovo_percorso, percorsi_output,
                                   profondita + 1);
   }
 }
@@ -878,7 +857,7 @@ std::vector<Percorso> trova_percorsi(const Punto &A, const Punto &B,
     return {diretto};
   }
   std::vector<Punto> base{};
-  costruisci_percorsi_ricorsivo(A, B, griglia, base, 0, risultati, 0);
+  costruisci_percorsi_ricorsivo(A, B, griglia, base, risultati, 0);
 
   std::sort(
       risultati.begin(), risultati.end(),

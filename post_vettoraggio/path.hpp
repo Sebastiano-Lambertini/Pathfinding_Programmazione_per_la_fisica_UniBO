@@ -83,8 +83,14 @@ void inserisci_larghezza(int larghezza_calcolata);///////////77
 void inserisci_altezza(int altezza_calcolata);////////////////77
 void forma_griglia_vettore(int altezza, int larghezza);
 void dilata_ostacoli();
-  Griglia(int larghezza, int altezza)
-      : griglia(altezza*larghezza, TipoCella::oltrepassabile) {}
+Griglia(int larghezza, int altezza)
+    : griglia(static_cast<size_t>(larghezza * altezza), TipoCella::oltrepassabile),
+      larghezza(larghezza),
+      altezza(altezza),
+      id_ostacolo(static_cast<size_t>(larghezza * altezza), -1),
+      fattore_scala(1.0),
+      min_x(0), max_x(0), min_y(0), max_y(0),
+      arrivo(), partenza() {}
 Griglia() : griglia(), larghezza(0), altezza(0), fattore_scala(1.0),
             min_x(0), max_x(0), min_y(0), max_y(0), arrivo(), partenza() {}
 private:
@@ -125,7 +131,7 @@ semplifica_percorso_all_indietro_fino_a_stabilizzazione(
 
 void costruisci_percorsi_ricorsivo(
     const Punto &corrente, const Punto &destinazione, const Griglia &griglia,
-    std::vector<Punto> &percorso_parziale, double costo_parziale,
+    std::vector<Punto> &percorso_parziale, 
     std::vector<Percorso> &percorsi_output, int profondita);
 
 std::vector<Percorso> trova_percorsi(const Punto &A, const Punto &B,
