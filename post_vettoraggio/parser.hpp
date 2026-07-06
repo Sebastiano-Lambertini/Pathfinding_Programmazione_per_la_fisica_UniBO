@@ -59,7 +59,7 @@ struct Dati_mappa {
 // FUNZIONI DI UTILITÀ
 // ==========================
 
-size_t salta_virgolette_spazi(const std::string &linea, size_t inizio);
+std::size_t salta_virgolette_spazi(const std::string &linea, std::size_t inizio);
 
 int trova_simbolo(const std::string &linea);
 

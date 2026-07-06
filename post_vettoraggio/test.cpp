@@ -166,11 +166,11 @@ TEST_CASE("Griglia rettangolare") {
 TEST_CASE("Ostacolo a U, uscita verso l'alto") {
   Griglia griglia(15, 15);
   // pareti sinistra, destra e fondo della U
-  for (size_t y = 5; y <= 12; ++y) {
+  for (int y = 5; y <= 12; ++y) {
     griglia.rendi_non_oltrepassabile(5, y); // parete sinistra
     griglia.rendi_non_oltrepassabile(9, y); // parete destra
   }
-  for (size_t x = 5; x <= 9; ++x) {
+  for (int x = 5; x <= 9; ++x) {
     griglia.rendi_non_oltrepassabile(x, 12);
   } // fondo
   // partenza dentro la U (6,7), arrivo fuori in alto (6,2)

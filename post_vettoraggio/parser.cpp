@@ -47,7 +47,7 @@
 #include <vector>
 namespace pf {
 
-size_t salta_virgolette_spazi(const std::string &linea, size_t inizio) {
+std::size_t salta_virgolette_spazi(const std::string &linea, std::size_t inizio) {
   while (inizio < linea.size() &&
          (linea[inizio] == '"' || linea[inizio] == ' ')) {
     ++inizio;
@@ -58,7 +58,7 @@ size_t salta_virgolette_spazi(const std::string &linea, size_t inizio) {
 // data una stringa: linea, se rappresenta un simbolo, lo trova. Trova tutti i
 // simboli presenti sulla mappa
 int trova_simbolo(const std::string &linea) {
-  size_t inizio_del_numero_id{0};
+  std::size_t inizio_del_numero_id{0};
   if (linea.find("symbol=") != std::string::npos) {
     inizio_del_numero_id =
         salta_virgolette_spazi(linea, 7 + linea.find("symbol="));
@@ -81,8 +81,8 @@ int trova_simbolo(const std::string &linea) {
 // per la stringa: linea, se rappresenta un simbolo, trova id corrispondente, si
 // crea così il vettore di simboli-id
 Associazione_id_simbolo ids_a_simboli(const std::string &linea) {
-  size_t inizio_id{0};
-  size_t inizio_simbolo{0};
+  std::size_t inizio_id{0};
+  std::size_t inizio_simbolo{0};
   if (linea.find("id=") != std::string::npos &&
       linea.find("code=") != std::string::npos) {
     inizio_id = salta_virgolette_spazi(linea, 3 + linea.find("id="));
@@ -153,17 +153,17 @@ std::vector<Punto> estrai_coordinate(const std::string &linea,
 
   // token
   std::vector<std::string> token;
-  size_t pos = 0;
+  std::size_t pos = 0;
   while (pos < stringa_coordinate.size()) {
-    size_t fine = stringa_coordinate.find(';', pos);
+    std::size_t fine = stringa_coordinate.find(';', pos);
     if (fine == std::string::npos) {
       fine = stringa_coordinate.size();
     }
     std::string pezzo = stringa_coordinate.substr(pos, fine - pos);
     // rimuove spazi iniziali/finali
-    size_t primo = pezzo.find_first_not_of(" \t");
+    std::size_t primo = pezzo.find_first_not_of(" \t");
     if (primo != std::string::npos) {
-      size_t ultimo = pezzo.find_last_not_of(" \t");
+      std::size_t ultimo = pezzo.find_last_not_of(" \t");
       pezzo = pezzo.substr(primo, ultimo - primo + 1);
       if (!pezzo.empty()) {
         token.push_back(pezzo);
@@ -181,17 +181,17 @@ std::vector<Punto> estrai_coordinate(const std::string &linea,
   std::vector<PuntoFlag> punti_flag;
   for (const auto &t : token) {
     std::vector<std::string> parti;
-    size_t inizio = 0;
-    while (inizio < t.size()) {
-      size_t sp = t.find(' ', inizio);
+    std::size_t inizio_coor = 0;
+    while (inizio_coor < t.size()) {
+      std::size_t sp = t.find(' ', inizio_coor);
       if (sp == std::string::npos) {
         sp = t.size();
       }
-      std::string parte = t.substr(inizio, sp - inizio);
+      std::string parte = t.substr(inizio_coor, sp - inizio_coor);
       if (!parte.empty()) {
         parti.push_back(parte);
       }
-      inizio = sp + 1;
+      inizio_coor = sp + 1;
     }
     if (parti.size() >= 2) {
       double x = std::stod(parti[0]);
@@ -215,8 +215,8 @@ std::vector<Punto> estrai_coordinate(const std::string &linea,
   }
 
   // quanti nodi di curva ci sono
-  std::vector<size_t> indici_nodi;
-  for (size_t i = 0; i < punti_flag.size(); ++i) {
+  std::vector<std::size_t> indici_nodi;
+  for (std::size_t i = 0; i < punti_flag.size(); ++i) {
     if (punti_flag[i].flag == 1) {
       indici_nodi.push_back(i);
       i += 2; // salta i due punti di "controllo"
@@ -246,7 +246,7 @@ std::vector<Punto> estrai_coordinate(const std::string &linea,
   };
 
   // divide in n =10 segmentini la curva tra due nodi
-  auto aggiungi_segmento = [&](size_t inizio_idx, size_t fine_idx) {
+  auto aggiungi_segmento = [&](std::size_t inizio_idx, std::size_t fine_idx) {
     const auto &nodo_inizio = punti_flag[inizio_idx];
     const auto &nodo_fine = punti_flag[fine_idx];
     int num_nodi_di_curva = static_cast<int>(fine_idx - inizio_idx - 1);
@@ -277,7 +277,7 @@ std::vector<Punto> estrai_coordinate(const std::string &linea,
       }
     } else {
       // se problemi fa linea retta
-      for (size_t i = inizio_idx + 1; i <= fine_idx; ++i) {
+      for (std::size_t i = inizio_idx + 1; i <= fine_idx; ++i) {
         punti.push_back({static_cast<int>(punti_flag[i].x),
                          static_cast<int>(punti_flag[i].y)});
       }
@@ -289,7 +289,7 @@ std::vector<Punto> estrai_coordinate(const std::string &linea,
                    static_cast<int>(punti_flag[indici_nodi[0]].y)});
 
   // e segmenti
-  for (size_t k = 0; k+1 != indici_nodi.size(); ++k) {
+  for (std::size_t k = 0; k+1 != indici_nodi.size(); ++k) {
     aggiungi_segmento(indici_nodi[k], indici_nodi[k + 1]);
   }
 
@@ -323,12 +323,12 @@ void calcola_dimensioni_max_min(
   assert(max_x_calcolato >= min_x_calcolato);
   assert(max_y_calcolato >= min_y_calcolato);
 
-  griglia.inserisci_min_x(min_x_calcolato);
-  griglia.inserisci_max_x(max_x_calcolato);
-  griglia.inserisci_min_y(min_y_calcolato);
-  griglia.inserisci_max_y(max_y_calcolato);
-  griglia.inserisci_altezza(altezza_calcolata);
-  griglia.inserisci_larghezza(larghezza_calcolata);
+  griglia.inserisci_min_x(static_cast<int>(std::round(min_x_calcolato)));
+  griglia.inserisci_max_x(static_cast<int>(std::round(max_x_calcolato)));
+  griglia.inserisci_min_y(static_cast<int>(std::round(min_y_calcolato)));
+  griglia.inserisci_max_y(static_cast<int>(std::round(max_y_calcolato)));
+  griglia.inserisci_altezza(static_cast<int>(std::round(altezza_calcolata)));
+  griglia.inserisci_larghezza(static_cast<int>(std::round(larghezza_calcolata)));
 }
 
 void calcola_dimensioni_max_min(
@@ -434,8 +434,8 @@ void riempi_poligoni(Griglia &griglia,
 
   for (int y = min_y; y-1 != max_y; ++y) {
     std::vector<int> intersezioni{};
-    size_t n_vertici = poligono.size();
-    for (size_t i = 0; i != n_vertici; ++i) {
+    std::size_t n_vertici = poligono.size();
+    for (std::size_t i = 0; i != n_vertici; ++i) {
       const auto &p1 = poligono[i];
       const auto &p2 = poligono[(i + 1) % n_vertici];
       int intersezione_x;
@@ -446,7 +446,7 @@ void riempi_poligoni(Griglia &griglia,
     }
     if (!intersezioni.empty()) {
       std::sort(intersezioni.begin(), intersezioni.end());
-      for (size_t i = 0; i + 1 < intersezioni.size(); i += 2) {
+      for (std::size_t i = 0; i + 1 < intersezioni.size(); i += 2) {
         for (int x = intersezioni[i]; x-1 != intersezioni[i + 1]; ++x) {
           if (x >= 0 && x < griglia.ottieni_larghezza() && y >= 0 &&
               y < griglia.ottieni_altezza()) {
@@ -527,7 +527,7 @@ void oggetti_a_griglia(const oggetto_poligonale_vietato &oggetto,
     punti_griglia.push_back({gx, gy});
   }
 
-  for (size_t i = 0; i != punti_griglia.size() - 1; ++i) { // disegna
+  for (std::size_t i = 0; i != punti_griglia.size() - 1; ++i) { // disegna
     disegna_linea(punti_griglia[i].first, punti_griglia[i].second,
                   punti_griglia[i + 1].first, punti_griglia[i + 1].second);
   }
@@ -565,7 +565,7 @@ double costo_percorso_geometrico_mondo(
 
   auto precedente = trasforma_a_mondo(percorso[0]);
 
-  for (size_t i = 1; i != percorso.size(); ++i) {
+  for (std::size_t i = 1; i != percorso.size(); ++i) {
     auto corrente = trasforma_a_mondo(percorso[i]);
 
     double dx = corrente.first - precedente.first;
@@ -624,7 +624,7 @@ void esporta_percorso_omap(
             << "\">";
         out << "        <coords count=\"" << punti_percorso.size() << "\">";
 
-        for (size_t i = 0; i != punti_percorso.size(); ++i) {
+        for (std::size_t i = 0; i != punti_percorso.size(); ++i) {
           double x_mondo =
               griglia.ottieni_min_x() +
               (punti_percorso[i].x + 0.5) *
@@ -867,7 +867,7 @@ void stampa_statistiche_percorsi(const std::vector<Percorso> &percorsi,
 
   std::cout << "Percorsi di lunghezza:\n";
 
-  for (size_t k = 0; k != percorsi.size(); k++) {
+  for (std::size_t k = 0; k != percorsi.size(); k++) {
     std::cout << costo_percorso_geometrico_mondo(percorsi[k].punti, griglia)
               << "m\n";
   }
@@ -1091,8 +1091,8 @@ std::vector<Percorso> aiuto_main2(const std::string &nome_file) {
   assert(altezza_griglia > 0);
 
   std::vector<std::vector<TipoCella>> griglia(
-      static_cast<size_t>(altezza_griglia),
-      std::vector<TipoCella>(static_cast<size_t>(larghezza_griglia),
+      static_cast<std::size_t>(altezza_griglia),
+      std::vector<TipoCella>(static_cast<std::size_t>(larghezza_griglia),
                              TipoCella::oltrepassabile));
   for (const auto &oggetto_vietato : oggetti_vietati) {
     oggetti_a_griglia(oggetto_vietato,
@@ -1130,7 +1130,7 @@ partenza_gy, griglia);
   std::cout << "Trovati " << percorsi.size()
             << " percorsi entro +20% del migliore:\n\n";
   std::cout << "Percorsi di lunghezza:\n";
-  for (size_t k = 0; k != percorsi.size(); k++) {
+  for (std::size_t k = 0; k != percorsi.size(); k++) {
     std::cout << costo_percorso_geometrico_mondo(percorsi[k].punti, griglia)
               << "m\n";
   }
@@ -1144,7 +1144,7 @@ partenza_gy, griglia);
         } else if (arrivo_trovato && x == arrivo_gx && y == arrivo_gy) {
           csv << "A";
         } else {
-          csv << (griglia[static_cast<size_t>(y)][static_cast<size_t>(x)] ==
+          csv << (griglia[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] ==
                           TipoCella::non_oltrepassabile
                       ? "0"
                       : "1");

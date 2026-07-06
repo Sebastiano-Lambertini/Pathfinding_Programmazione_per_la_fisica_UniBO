@@ -55,6 +55,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <cstddef>
 #include <iostream>
 #include <queue>
 #include <vector>
@@ -74,12 +75,12 @@ const int DY[4] = {-1, 0, 1, 0};
   //}));
   altezza = static_cast<int>(g.size());
   larghezza = (altezza > 0) ? static_cast<int>(g[0].size()) : 0;
-  id_ostacolo.resize(static_cast<size_t>(altezza),
-                     std::vector<int>(static_cast<size_t>(larghezza), -1));
+  id_ostacolo.resize(static_cast<std::size_t>(altezza),
+                     std::vector<int>(static_cast<std::size_t>(larghezza), -1));
 }*/
 
-int Griglia::indice_monodimensionale(int x, int y) const{
-  return y * larghezza + x;
+std::size_t Griglia::indice_monodimensionale(int x, int y) const{
+  return static_cast<std::size_t>(y * larghezza + x);
 }
 
 bool Griglia::e_oltrepassabile(
@@ -154,9 +155,9 @@ void Griglia::inserisci_arrivo(const Punto &p) { arrivo = p; }
 void Griglia::forma_griglia_vettore(int altezza_calcolata,
                                     int larghezza_calcolata) {
   griglia.assign(
-      static_cast<size_t>(altezza_calcolata*larghezza_calcolata),
+      static_cast<std::size_t>(altezza_calcolata*larghezza_calcolata),
                              TipoCella::oltrepassabile);
-  id_ostacolo.assign(altezza_calcolata*larghezza_calcolata, -1);
+  id_ostacolo.assign(static_cast<std::size_t>(altezza_calcolata*larghezza_calcolata), -1);
 }
 
 // floodfill
@@ -242,7 +243,7 @@ Punto trova_primo_ostacolo_sulla_linea(const Punto &A, const Punto &B,
                                        const Griglia &griglia) {
   std::vector<Punto> linea = linea_dritta_con_bresenham(A, B);
   assert(!linea.empty());
-  for (size_t i = 1; i != linea.size(); ++i) {
+  for (std::size_t i = 1; i != linea.size(); ++i) {
     Punto p = linea[i];
     if (p == B) {
       continue;
@@ -261,7 +262,7 @@ Punto trova_ultimo_punto_prima_del_primo_ostacolo(const Punto &A,
   std::vector<Punto> linea = linea_dritta_con_bresenham(A, B);
   assert(!linea.empty());
   Punto ultimo_libero = A;
-  for (size_t i = 1; i != linea.size(); ++i) {
+  for (std::size_t i = 1; i != linea.size(); ++i) {
     if (!griglia.e_oltrepassabile(linea[i])) {
       return ultimo_libero;
     }
@@ -275,7 +276,7 @@ bool e_libero_fino_a_punto_di_arrivo(const Punto &P, const Punto &B,
                                      const Griglia &griglia) {
   std::vector<Punto> linea = linea_dritta_con_bresenham(P, B);
   assert(!linea.empty());
-  for (size_t i = 1; i != linea.size(); ++i) {
+  for (std::size_t i = 1; i != linea.size(); ++i) {
     if (!griglia.e_oltrepassabile(linea[i])) {
       return false;
     }
@@ -291,7 +292,7 @@ bool e_libero_spazio_in_direzione_arrivo(const Punto &P, const Punto &B,
   assert(id_ostacolo >= 0);
   std::vector<Punto> linea = linea_dritta_con_bresenham(P, B);
   assert(!linea.empty());
-  for (size_t i = 1; i != linea.size(); ++i) {
+  for (std::size_t i = 1; i != linea.size(); ++i) {
     Punto p = linea[i];
     if (!griglia.e_oltrepassabile(p)) {
       int id_colpito = griglia.ottieni_id_ostacolo(p);
@@ -578,8 +579,8 @@ semplifica_percorso_all_indietro(const std::vector<Punto> &percorso,
 
       // cerca il punto più vecchio visibile
       for (int j = 0; j != i; ++j) {
-        if (e_libero_fino_a_punto_di_arrivo(corrente[static_cast<size_t>(i)],
-                                            corrente[static_cast<size_t>(j)],
+        if (e_libero_fino_a_punto_di_arrivo(corrente[static_cast<std::size_t>(i)],
+                                            corrente[static_cast<std::size_t>(j)],
                                             griglia)) {
           migliore = j; // se lo trova esce e se lo salva
           break;
@@ -600,7 +601,7 @@ semplifica_percorso_all_indietro(const std::vector<Punto> &percorso,
         nuovo.insert(nuovo.end(), corrente.begin(),
                      corrente.begin() + migliore + 1);
 
-        nuovo.push_back(corrente[static_cast<size_t>(i)]);
+        nuovo.push_back(corrente[static_cast<std::size_t>(i)]);
 
         if (!(i + 1 == static_cast<int>(corrente.size()))) {
           nuovo.insert(nuovo.end(), corrente.begin() + i + 1, corrente.end());
@@ -617,16 +618,14 @@ semplifica_percorso_all_indietro(const std::vector<Punto> &percorso,
         i = migliore;
       } else { // se non vede nessun punto prima-> capita tra partenza/corrente
         // e punto_ingresso_bordo
-        int best = 0;
-        for (int k = i - 1; k != 0; --k) {
+        std::size_t best = 0;
+        for (std::size_t k = i - 1; k != 0; --k) {
           if (griglia.e_oltrepassabile(corrente[k])) {
             best = k;
           }
         }
-        std::cout << "BEST:" << griglia.e_oltrepassabile(corrente[best]);
-        std::cout << "BEST:" << griglia.e_oltrepassabile(corrente[i + 1]);
         std::vector<Percorso> percorsi_indietro = trova_percorsi(
-            corrente[best], corrente[static_cast<size_t>(i + 1)],
+            corrente[best], corrente[static_cast<std::size_t>(i + 1)],
             griglia); // riapplica tutto l'algoritmo tra la partenza e il punto
                       // prima di quello che non vede altri punti dopo
 
@@ -787,10 +786,10 @@ std::cout<<"oneeeeeeeeeeeeeeeeeeeeeeeeee\n";
     /*for (int i = 0; i !=
     static_cast<int>(bordo_punto_ingresso_bordo_a_punto_uscita_bordo.size());
     ++i) { std::cout << "(" <<
-    bordo_punto_ingresso_bordo_a_punto_uscita_bordo[static_cast<size_t>(i)].x <<
+    bordo_punto_ingresso_bordo_a_punto_uscita_bordo[static_cast<std::size_t>(i)].x <<
     "; "
                 <<
-    bordo_punto_ingresso_bordo_a_punto_uscita_bordo[static_cast<size_t>(i)].y <<
+    bordo_punto_ingresso_bordo_a_punto_uscita_bordo[static_cast<std::size_t>(i)].y <<
     "), ";
     }*/
 
