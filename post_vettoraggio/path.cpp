@@ -80,7 +80,7 @@ const int DY[4] = {-1, 0, 1, 0};
 }*/
 
 std::size_t Griglia::indice_monodimensionale(int x, int y) const{
-  return static_cast<std::size_t>(y * larghezza + x);
+  return (static_cast<std::size_t>(y) * static_cast<size_t>(larghezza) + static_cast<size_t>(x));
 }
 
 bool Griglia::e_oltrepassabile(
@@ -618,14 +618,14 @@ semplifica_percorso_all_indietro(const std::vector<Punto> &percorso,
         i = migliore;
       } else { // se non vede nessun punto prima-> capita tra partenza/corrente
         // e punto_ingresso_bordo
-        std::size_t best = 0;
-        for (std::size_t k = i - 1; k != 0; --k) {
+        /*std::size_t best = 0;
+        for (std::size_t k = static_cast<size_t>(i - 1); k != 0; --k) {
           if (griglia.e_oltrepassabile(corrente[k])) {
             best = k;
           }
-        }
+        }*/
         std::vector<Percorso> percorsi_indietro = trova_percorsi(
-            corrente[best], corrente[static_cast<std::size_t>(i + 1)],
+            corrente[/*best*/0], corrente[static_cast<std::size_t>(i + 1)],
             griglia); // riapplica tutto l'algoritmo tra la partenza e il punto
                       // prima di quello che non vede altri punti dopo
 
@@ -633,7 +633,7 @@ semplifica_percorso_all_indietro(const std::vector<Punto> &percorso,
           return {};
         }
 
-        std::vector<std::vector<Punto>> risultati;
+        std::vector<std::vector<Punto>> risultati{};
 
         for (const auto &pb : percorsi_indietro) {
 
